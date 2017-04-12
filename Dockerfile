@@ -1,18 +1,49 @@
-FROM alpine
+FROM python
+MAINTAINER dididi <dfdgsdfg@gmail.com>
 
-RUN \
-  apk --no-cache add byacc curl flex gcc groff linux-headers make musl-dev ncurses-dev util-linux && \
-  curl -sL https://sourceforge.net/projects/nethack/files/nethack/3.6.0/nethack-360-src.tgz | tar zxf - && \
-  ( \
-    cd nethack-3.6.0 && \
-    sed -i -e 's/cp -n/cp/g' -e '/^PREFIX/s:=.*:=/usr:' sys/unix/hints/linux && \
-    sh sys/unix/setup.sh sys/unix/hints/linux && \
-    make all && \
-    make install \
-  ) && \
-  rm -rf nethack-3.6.0
+ENV HOME /root
+ENV LC_ALL C.UTF-8
 
-# for backup
-VOLUME /usr/games/lib/nethackdir
+RUN apt-get update && \
+    apt-get -y install build-essential \
+                       libncursesw5-dev \
+                       bison \
+                       flex \
+                       liblua5.1-0-dev \
+                       libsqlite3-dev \
+                       libz-dev \
+                       pkg-config \
+                       libsdl2-image-dev \
+                       libsdl2-mixer-dev \
+                       libsdl2-dev \
+                       libfreetype6-dev \
+                       libpng-dev \
+                       ttf-dejavu-core && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-ENTRYPOINT ["/usr/games/nethack"]
+RUN pip install tornado==3.2.2
+
+WORKDIR /root
+RUN git clone git://gitorious.org/crawl/crawl.git
+
+WORKDIR /root/crawl
+RUN git submodule update --init
+
+WORKDIR /root/crawl/crawl-ref/source
+RUN make WEBTILES=y USE_DGAMELAUNCH=y
+RUN mkdir rcs
+
+WORKDIR /root/crawl/crawl-ref/source/webserver
+RUN sed -i '/bind_port/ s|8080|80|' config.py
+RUN sed -i '/password_db/ s|./webserver/passwd.db3|/data/passwd.db3|' config.py
+RUN sed -i '/filename/ s|#||' config.py
+RUN sed -i '/filename/ s|webtiles.log|/data/webtiles.log|' config.py
+# RUN sed -i '/crypt_algorithm/ s|broken|6|' config.py
+# RUN sed -i '/crypt_salt_length/ s|16|16|' config.py
+
+WORKDIR /root/crawl/crawl-ref/source
+CMD python webserver/server.py
+
+VOLUME ["/data"]
+EXPOSE 80 443
