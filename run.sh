@@ -23,16 +23,6 @@ function show_link() {
 
 show_usage
 
-# If the first argument is 
-nosave=false
-if [ $# > 0 ]
-then
-    if [ $1 == "nosave" ]
-    then
-        nosave=true
-    fi
-fi
-
 # Get docker machine IP if exists.
 if [ x$(docker-machine ls --quiet) == "x" ]
 then
