@@ -62,7 +62,7 @@ RUN pip install -U pip && pip install 'tornado>=3.0,<4.0'
 # make webtile version
 RUN cd /crawl/crawl-ref/source && make WEBTILES=y
 
-COPY docker-entrypoint.sh /entrypoint.sh
+COPY data/docker-entrypoint.sh /entrypoint.sh
 RUN chown -R crawl:crawl /entrypoint.sh \
 	&& chmod 777 /entrypoint.sh \
 	&& chown -R crawl:crawl /crawl
